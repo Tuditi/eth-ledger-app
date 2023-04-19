@@ -1,0 +1,23 @@
+{
+  "name": "eth-ap",
+  "version": "1.0.0",
+  "description": "",
+  "source": "index.html",
+  "scripts": {
+    "start": "electron"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "22.3.5"
+  },
+  "dependencies": {
+    "@ledgerhq/hw-app-btc": "^10.0.1",
+    "@ledgerhq/hw-app-eth": "^6.32.2",
+    "@ledgerhq/hw-transport-node-hid": "^6.27.13",
+    "@ledgerhq/logs": "^6.10.1",
+    "babel-polyfill": "^6.26.0",
+    "browserify": "^17.0.0",
+    "node-polyfill-webpack-plugin": "^2.0.1"
+  }
+}
