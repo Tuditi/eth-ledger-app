@@ -6,7 +6,7 @@
 import Web3 from 'web3'
 
 import { ERC_20_ABI } from '../abis'
-import { signEthereumTransaction } from './ledger'
+import { getEthereumInfo, signEthereumTransaction } from './ledger'
 
 const RPC_ENDPOINT = 'https://ethereum-goerli.publicnode.com'
 const TOKEN_CONTRACT_ADDRESS = '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6'
@@ -60,6 +60,10 @@ async function run(): Promise<void> {
         // 3. Send the transaction
         // const tx = await provider.eth.sendSignedTransaction(signature)
         // console.log('TX: ', tx)
+
+        // 4. Get the address
+        const address = await getEthereumInfo(true)
+        console.log('ADDRESS: ', address)
     } catch (err) {
         console.error(err)
     }
