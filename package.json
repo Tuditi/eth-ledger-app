@@ -20,9 +20,11 @@
     "@ledgerhq/logs": "^6.10.1",
     "babel-polyfill": "^6.26.0",
     "browserify": "^17.0.0",
+    "ethereumjs-tx": "^2.1.2",
     "node-polyfill-webpack-plugin": "^2.0.1",
     "patch-package": "^7.0.0",
     "postinstall-postinstall": "^2.1.0",
+    "rlp": "^3.0.0",
     "typescript": "^5.0.4",
     "web3": "^1.10.0"
   }

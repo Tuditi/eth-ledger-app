@@ -4,6 +4,7 @@
 // Create data for ledger to be signed
 
 import Web3 from 'web3'
+import { Transaction } from 'ethereumjs-tx'
 
 import { ERC_20_ABI } from '../abis'
 import { getEthereumInfo, signEthereumTransaction } from './ledger'
@@ -25,23 +26,21 @@ async function initializeProvider(): Promise<any> {
 async function getDataToSign(): Promise<any> {
     const erc20Contract = new provider.eth.Contract(ERC_20_ABI, TOKEN_CONTRACT_ADDRESS)
     const data = erc20Contract.methods.transfer(RECIPIENT_ACCOUNT_ADDRESS, provider.utils.toHex(AMOUNT)).encodeABI()
-    const nonce = await provider.eth.getTransactionCount(ORIGIN_ACCOUNT_ADDRESS)
-    console.log('NONCE: ', nonce)
-    const gasPrice = await provider.eth.getGasPrice()
-    console.log('GAS PRICE: ', gasPrice)
-    const gasLimit = await provider.eth.estimateGas({ from: ORIGIN_ACCOUNT_ADDRESS, to: TOKEN_CONTRACT_ADDRESS, data })
-    console.log('GAS LIMIT: ', gasLimit)
+    const nonce = provider.utils.toHex(await provider.eth.getTransactionCount(ORIGIN_ACCOUNT_ADDRESS))
+    const gasPrice = provider.utils.toHex(await provider.eth.getGasPrice())
+    const gasLimit = provider.utils.toHex(await provider.eth.estimateGas({ from: ORIGIN_ACCOUNT_ADDRESS, to: TOKEN_CONTRACT_ADDRESS, data }))
     const to = TOKEN_CONTRACT_ADDRESS
-    const value = ETH_AMOUNT
+    const value = provider.utils.toHex(ETH_AMOUNT)
     const from = ORIGIN_ACCOUNT_ADDRESS
     const chainId = '0x5'
 
-    const transactionToEncode = { nonce, gasPrice, gasLimit, to, value, data, chainId }
-    
-    // Create RLP encoding
-    // Hash with Keccak-256
+    const transactionFields = { nonce, gasPrice, gasLimit, to, value, data, v: chainId, r: 0, s: 0, }
+    console.log('TX DATA: ', transactionFields)
+    const transactionObject = new Transaction(transactionFields)
+    const transactionHash = transactionObject.hash().toString('hex')
+    console.log('HASH: ', transactionHash)
 
-    return transactionToEncode
+    return transactionHash
 }
 
 async function run(): Promise<void> {
@@ -54,16 +53,16 @@ async function run(): Promise<void> {
         console.log('DATA: ', data)
 
         // 2. Sign the data
-        // const signature = await signEthereumTransaction(data)
-        // console.log('SIGNATURE: ', signature)
+        const signature = await signEthereumTransaction(data)
+        console.log('SIGNATURE: ', signature)
         
         // 3. Send the transaction
         // const tx = await provider.eth.sendSignedTransaction(signature)
         // console.log('TX: ', tx)
 
         // 4. Get the address
-        const address = await getEthereumInfo(true)
-        console.log('ADDRESS: ', address)
+        // const address = await getEthereumInfo(true)
+        // console.log('ADDRESS: ', address)
     } catch (err) {
         console.error(err)
     }
