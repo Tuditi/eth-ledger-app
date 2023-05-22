@@ -4,29 +4,31 @@
     "description": "",
     "source": "index.html",
     "scripts": {
-      "start": "tsc && node_modules/electron/dist/electron build/main.js",
-      "script:sign": "ts-node ./scripts/sign.ts",
-      "postinstall": "npm rebuild usb --build-from-source && patch-package"
+        "start": "tsc && node_modules/electron/dist/electron build/main.js",
+        "script:sign": "ts-node ./scripts/sign.ts",
+        "postinstall": "npm rebuild usb --build-from-source && patch-package"
     },
     "author": "",
     "license": "ISC",
     "devDependencies": {
-      "electron": "22.3.5",
-      "ts-node": "^10.9.1"
+        "electron": "22.3.5",
+        "ts-node": "^10.9.1"
     },
     "dependencies": {
-      "@ethereumjs/common": "^3.1.2",
-      "@ethereumjs/tx": "^4.1.2",
-      "@ledgerhq/hw-app-btc": "^10.0.1",
-      "@ledgerhq/hw-app-eth": "^6.32.2",
-      "@ledgerhq/hw-transport-node-hid": "^6.27.13",
-      "@ledgerhq/logs": "^6.10.1",
-      "babel-polyfill": "^6.26.0",
-      "browserify": "^17.0.0",
-      "node-polyfill-webpack-plugin": "^2.0.1",
-      "patch-package": "^7.0.0",
-      "postinstall-postinstall": "^2.1.0",
-      "typescript": "^5.0.4",
-      "web3": "^1.10.0"
+        "@ethereumjs/common": "^3.1.2",
+        "@ethereumjs/rlp": "^4.0.1",
+        "@ethereumjs/tx": "^4.1.2",
+        "@ethereumjs/util": "^8.0.6",
+        "@ledgerhq/hw-app-btc": "^10.0.1",
+        "@ledgerhq/hw-app-eth": "^6.32.2",
+        "@ledgerhq/hw-transport-node-hid": "^6.27.13",
+        "@ledgerhq/logs": "^6.10.1",
+        "babel-polyfill": "^6.26.0",
+        "browserify": "^17.0.0",
+        "node-polyfill-webpack-plugin": "^2.0.1",
+        "patch-package": "^7.0.0",
+        "postinstall-postinstall": "^2.1.0",
+        "typescript": "^5.0.4",
+        "web3": "^1.10.0"
     }
-  }
+}
