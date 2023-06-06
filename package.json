@@ -6,6 +6,7 @@
     "scripts": {
         "start": "tsc && node_modules/electron/dist/electron build/main.js",
         "script:sign": "ts-node ./scripts/sign.ts",
+        "script:irc30": "ts-node ./scripts/sign-irc-30.ts",
         "postinstall": "npm rebuild usb --build-from-source && patch-package"
     },
     "author": "",
