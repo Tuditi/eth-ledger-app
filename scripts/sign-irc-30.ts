@@ -6,7 +6,6 @@ import Web3 from 'web3'
 import { Chain, Common } from '@ethereumjs/common'
 import { Transaction, TxData } from '@ethereumjs/tx'
 import { RLP } from '@ethereumjs/rlp'
-import { bufArrToArr } from '@ethereumjs/util'
 
 import { ISC_SANDBOX_ABI } from '../abis'
 import { signEthereumTransaction } from './ledger'
@@ -101,7 +100,7 @@ async function run(): Promise<void> {
 
         // 2. Serialize message for ledger
         const message = transactionObject.getMessageToSign(false)
-        const serializedMessage = Buffer.from(RLP.encode(bufArrToArr(message)))
+        const serializedMessage = Buffer.from(RLP.encode(message))
 
         // 3. Sign the data using Ledger
         const signature = await signEthereumTransaction(serializedMessage)
@@ -109,7 +108,7 @@ async function run(): Promise<void> {
         // 4. Send the transaction
         // const txData = await createTxObjectFromString(serializedMessage)
         const signedObject = await createTxObject({ ...transactionData, v: '0x' + signature.v, r: '0x' + signature.r, s: '0x' + signature.s })
-        const serializedTransaction = Buffer.from(RLP.encode(bufArrToArr(signedObject.raw())))
+        const serializedTransaction = Buffer.from(RLP.encode(signedObject.raw()))
         
         const stringifiedTransaction = '0x' + serializedTransaction.toString('hex')
         // const tx = await provider.eth.sendSignedTransaction(stringifiedTransaction)
