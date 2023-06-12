@@ -14,9 +14,8 @@ const RPC_ENDPOINT = 'https://rpc.sepolia.org/'
 const TOKEN_CONTRACT_ADDRESS = '0x68194a729C2450ad26072b3D33ADaCbcef39D574' // DAI ERC-20 Contract Address
 const ORIGIN_ACCOUNT_ADDRESS = '0xF65e3cCbe04D4784EDa9CC4a33F84A6162aC9EB6'
 const RECIPIENT_ACCOUNT_ADDRESS = '0x1bf171563b2642bB6E93081a7a1F2E6B16A54c93'
-const CHAIN_ID = Chain.Sepolia
+const CHAIN_ID = 1071
 
-// Change to 1071 for shimmer testnet
 const TX_OPTIONS = { common: Common.custom({
     chainId: CHAIN_ID,
 })}
@@ -25,6 +24,53 @@ const AMOUNT = 10000000000000000 // 1DAI = 1000000000000000000
 const ETH_AMOUNT = 0 // Since we don't want to transfer ETH
 
 let provider: Web3
+
+async function run(): Promise<void> {
+    try {
+        // 0. Initialize the provider
+        await initializeProvider()
+
+        // 1. Get the unsigned transaction data
+        const transactionData = await createTxData()
+        const transactionObject = await createTransaction(transactionData)
+
+        // 2. Serialize message for ledger
+        const message = transactionObject.getMessageToSign(false)
+        const serializedMessage = Buffer.from(RLP.encode(message)).toString('hex')
+        console.log('serialize', serializedMessage)
+
+        // 3. Create signed transaction
+        const signature = await signEthereumTransaction(serializedMessage)
+        console.log(signature)
+        const signedTransaction = createSignedTransaction(serializedMessage, signature)
+        console.log('signedTx', signedTransaction)
+
+        // 3b create signed transaction using transaction object
+        // const signedObject = await createTransaction({ ...transactionData, v: `0x${v}`, r: `0x${r}`, s: `0x${s}` })
+        // const serializedTransaction = Buffer.from(RLP.encode(signedObject.raw()))
+        // console.log('expected', serializedTransaction)
+
+        // 4. Send the transaction
+        const tx = await provider.eth.sendSignedTransaction(signedTransaction)
+        console.log('Sent Transaction', tx)
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+function createSignedTransaction(hexString: string, signature: any): string {
+    const BREAK_SPACE = 'a0'
+    const VRS_PRE_FILLED_BYTE_LENGTH = 8
+
+    const {v, r, s} = signature
+    const substr = hexString.substring(0, hexString.length - VRS_PRE_FILLED_BYTE_LENGTH)
+
+    const signedTransaction =  substr + v.toString(16) + BREAK_SPACE + r + BREAK_SPACE + s
+    console.log('Pre-error:', signedTransaction)
+    const transaction = Transaction.fromSerializedTx(Buffer.from(signedTransaction, 'hex'), TX_OPTIONS)
+
+    return '0x' + transaction.serialize().toString('hex')
+}
 
 async function initializeProvider(): Promise<any> {
     provider = new Web3(RPC_ENDPOINT)
@@ -48,39 +94,8 @@ async function createTxData(): Promise<TxData> {
     return { nonce, gasPrice, gasLimit, to, value, data }
 }
 
-async function createTxObject(txData: TxData): Promise<Transaction> {
+async function createTransaction(txData: TxData): Promise<Transaction> {
     return Transaction.fromTxData(txData, TX_OPTIONS)
-}
-
-
-async function run(): Promise<void> {
-    try {
-        // 0. Initialize the provider
-        await initializeProvider()
-
-        // 1. Get the unsigned transaction data
-        const transactionData = await createTxData()
-        const transactionObject = await createTxObject(transactionData)
-
-        // 2. Serialize message for ledger
-        const message = transactionObject.getMessageToSign(false)
-        const serializedMessage = Buffer.from(RLP.encode(message))
-
-        // 3. Sign the data using Ledger
-        const signature = await signEthereumTransaction(serializedMessage)
-
-        // 4. Send the transaction
-        const signedObject = await createTxObject({ ...transactionData, v: '0x' + signature.v, r: '0x' + signature.r, s: '0x' + signature.s })
-        const serializedTransaction = Buffer.from(RLP.encode(signedObject.raw()))
-    
-        const tx = await provider.eth.sendSignedTransaction('0x'+serializedTransaction.toString('hex'))
-
-        const expected = Transaction.fromSerializedTx(serializedTransaction, TX_OPTIONS)
-        console.log('exp', expected)
-        console.log('TX: ', tx)
-    } catch (err) {
-        console.error(err)
-    }
 }
 
 void run()
