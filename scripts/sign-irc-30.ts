@@ -85,8 +85,16 @@ async function createTxObject(txData: TxData): Promise<Transaction> {
     return Transaction.fromTxData(txData, TX_OPTIONS)
 }
 
-async function createTxObjectFromString(txString: Buffer): Promise<Transaction> {
-    return Transaction.fromSerializedTx(txString, TX_OPTIONS)
+async function createTxObjectFromString(txString: string, signature): Promise<Transaction> {
+    console.log('incoming', txString)
+    const {v, r, s} = signature
+    console.log('v', v)
+    console.log('r', r)
+    console.log('s', s)
+    const substr = txString.substring(0, txString.length - 8)
+    const noVrs =  substr + v.toString(16) + `a0${r}` + `a0${s}`
+    console.log('novrs:', noVrs)
+    return Transaction.fromSerializedTx(Buffer.from(noVrs, 'hex'), TX_OPTIONS)
 }
 
 async function run(): Promise<void> {
@@ -97,18 +105,20 @@ async function run(): Promise<void> {
         // 1. Get the unsigned transaction data
         const transactionData = await createTxData()
         const transactionObject = await createTxObject(transactionData)
+        console.log('transaction', transactionObject.serialize().toString('hex'))
 
         // 2. Serialize message for ledger
         const message = transactionObject.getMessageToSign(false)
-        const serializedMessage = Buffer.from(RLP.encode(message))
+        const serializedMessage = Buffer.from(RLP.encode(message)).toString('hex')
 
         // 3. Sign the data using Ledger
         const signature = await signEthereumTransaction(serializedMessage)
 
         // 4. Send the transaction
-        // const txData = await createTxObjectFromString(serializedMessage)
         const signedObject = await createTxObject({ ...transactionData, v: '0x' + signature.v, r: '0x' + signature.r, s: '0x' + signature.s })
         const serializedTransaction = Buffer.from(RLP.encode(signedObject.raw()))
+        console.log('expected:', serializedTransaction.toString('hex'))
+        const txData = await createTxObjectFromString(serializedMessage, signature)
         
         const stringifiedTransaction = '0x' + serializedTransaction.toString('hex')
         // const tx = await provider.eth.sendSignedTransaction(stringifiedTransaction)

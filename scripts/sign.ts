@@ -5,20 +5,23 @@
 import Web3 from 'web3'
 import { Chain, Common } from '@ethereumjs/common'
 import { Transaction, TxData } from '@ethereumjs/tx'
-import { RLP } from '@ethereumjs/rlp'
 
 import { ERC_20_ABI } from '../abis'
 import { signEthereumTransaction } from './ledger'
+import { RLP } from '@ethereumjs/rlp'
 
 const RPC_ENDPOINT = 'https://rpc.sepolia.org/'
 const TOKEN_CONTRACT_ADDRESS = '0x68194a729C2450ad26072b3D33ADaCbcef39D574' // DAI ERC-20 Contract Address
 const ORIGIN_ACCOUNT_ADDRESS = '0xF65e3cCbe04D4784EDa9CC4a33F84A6162aC9EB6'
 const RECIPIENT_ACCOUNT_ADDRESS = '0x1bf171563b2642bB6E93081a7a1F2E6B16A54c93'
-const CHAIN_ID = 1071
+const CHAIN_ID = Chain.Sepolia
 
-const TX_OPTIONS = { common: Common.custom({
-    chainId: CHAIN_ID,
-})}
+const TX_OPTIONS = { 
+    common: Common.custom({
+        chainId: CHAIN_ID,
+    }),
+    freeze: false
+}
 
 const AMOUNT = 10000000000000000 // 1DAI = 1000000000000000000
 const ETH_AMOUNT = 0 // Since we don't want to transfer ETH
@@ -32,25 +35,27 @@ async function run(): Promise<void> {
 
         // 1. Get the unsigned transaction data
         const transactionData = await createTxData()
-        const transactionObject = await createTransaction(transactionData)
+        const transaction = Transaction.fromTxData(transactionData, TX_OPTIONS)
 
-        // 2. Serialize message for ledger
-        const message = transactionObject.getMessageToSign(false)
-        const serializedMessage = Buffer.from(RLP.encode(message)).toString('hex')
-        console.log('serialize', serializedMessage)
+        // 2. Replace v value of raw transaction
+        const rawTx = transaction.raw()
+        const chainId = TX_OPTIONS.common.chainId().toString(16)
+        const vHex = padHexString(chainId)
+        rawTx[6] = Buffer.from(vHex, 'hex')
 
-        // 3. Create signed transaction
-        const signature = await signEthereumTransaction(serializedMessage)
-        console.log(signature)
-        const signedTransaction = createSignedTransaction(serializedMessage, signature)
-        console.log('signedTx', signedTransaction)
+        // 3. RLP Encode message for ledger        
+        const message = Buffer.from(RLP.encode(rawTx)).toString('hex')
 
-        // 3b create signed transaction using transaction object
+        // 4a. Create signed transaction using raw string
+        const signature = await signEthereumTransaction(message)
+        const signedTransaction = createSignedTransaction(rawTx, signature)
+        
+        // 4b create signed transaction using transaction object
         // const signedObject = await createTransaction({ ...transactionData, v: `0x${v}`, r: `0x${r}`, s: `0x${s}` })
         // const serializedTransaction = Buffer.from(RLP.encode(signedObject.raw()))
         // console.log('expected', serializedTransaction)
 
-        // 4. Send the transaction
+        // 5. Send the transaction
         const tx = await provider.eth.sendSignedTransaction(signedTransaction)
         console.log('Sent Transaction', tx)
     } catch (err) {
@@ -58,22 +63,22 @@ async function run(): Promise<void> {
     }
 }
 
-function createSignedTransaction(hexString: string, signature: any): string {
-    const BREAK_SPACE = 'a0'
-    const VRS_PRE_FILLED_BYTE_LENGTH = 8
+function createSignedTransaction(rawTx: Buffer[], signature: any): string {
+    rawTx[6] = Buffer.from(signature.v, 'hex')
+    rawTx[7] = Buffer.from(signature.r, 'hex')
+    rawTx[8] = Buffer.from(signature.s, 'hex')
 
-    const {v, r, s} = signature
-    const substr = hexString.substring(0, hexString.length - VRS_PRE_FILLED_BYTE_LENGTH)
-
-    const signedTransaction =  substr + v.toString(16) + BREAK_SPACE + r + BREAK_SPACE + s
-    console.log('Pre-error:', signedTransaction)
-    const transaction = Transaction.fromSerializedTx(Buffer.from(signedTransaction, 'hex'), TX_OPTIONS)
-
-    return '0x' + transaction.serialize().toString('hex')
+    const transaction = Transaction.fromValuesArray(rawTx, TX_OPTIONS)
+    const serializedTx = transaction.serialize()
+    return `0x${serializedTx.toString('hex')}`
 }
 
 async function initializeProvider(): Promise<any> {
     provider = new Web3(RPC_ENDPOINT)
+}
+
+function padHexString(str: string): string {
+    return str.length % 2 !== 0 ? "0" + str : str;
 }
 
 async function createTxData(): Promise<TxData> {
@@ -92,10 +97,6 @@ async function createTxData(): Promise<TxData> {
     const value = provider.utils.toHex(ETH_AMOUNT)
 
     return { nonce, gasPrice, gasLimit, to, value, data }
-}
-
-async function createTransaction(txData: TxData): Promise<Transaction> {
-    return Transaction.fromTxData(txData, TX_OPTIONS)
 }
 
 void run()

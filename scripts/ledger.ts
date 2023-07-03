@@ -6,7 +6,7 @@ export async function getEthereumInfo(verify): Promise<string> {
     try {
         console.log("Dir", __dirname)
             const transport = await TransportNodeHid.open("")
-        listen(log => console.log(log))
+        // listen(log => console.log(log))
         //   console.error("transport", transport)
         const appEth = new AppEth(transport);
             
@@ -23,7 +23,7 @@ export async function getEthereumInfo(verify): Promise<string> {
     };
 }
 
-export async function signEthereumTransaction(rawTransaction: Buffer): Promise<any> {
+export async function signEthereumTransaction(rawTransaction: string): Promise<any> {
     try {
         const transport = await TransportNodeHid.open("")
         listen(log => console.log(log))
